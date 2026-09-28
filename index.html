@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#183a32">
+  <title>Python tanulóműhely</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172b27;
+      --muted: #687873;
+      --paper: #fffefa;
+      --canvas: #f1f3ed;
+      --line: #dfe5dd;
+      --forest: #183a32;
+      --forest-soft: #264d43;
+      --mint: #c8e2d6;
+      --mint-pale: #eaf3ee;
+      --coral: #e16d52;
+      --coral-pale: #fae9e2;
+      --sun: #f0c76c;
+      --code: #162923;
+      --shadow: 0 12px 34px rgba(24, 58, 50, .07);
+      font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--canvas); color: var(--ink); }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid #e16d5280; outline-offset: 2px; }
+    .app { min-height: 100vh; display: grid; grid-template-columns: 252px minmax(0, 1fr); }
+
+    .sidebar {
+      position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 25px 16px 20px;
+      background: var(--forest); color: #f5f5ea; display: flex; flex-direction: column; z-index: 5;
+    }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 9px 24px; border-bottom: 1px solid #ffffff20; }
+    .brand-mark { width: 38px; height: 38px; display: grid; place-items: center; background: var(--sun); color: var(--forest); border-radius: 11px 11px 11px 3px; font-weight: 800; font-size: 17px; }
+    .brand strong { display: block; font-family: Georgia, serif; font-size: 18px; font-weight: 600; letter-spacing: 0; }
+    .brand small { color: #b7ccc3; display: block; font-size: 11px; margin-top: 3px; }
+    .side-label { margin: 22px 10px 9px; color: #a7bdb4; font-size: 10px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; }
+    .search-wrap { position: relative; flex: 0 0 auto; margin: 0 4px 5px; }
+    .search-wrap input { width: 100%; padding: 10px 12px 10px 35px; border: 1px solid #ffffff26; border-radius: 7px; background: #ffffff0d; color: white; font-size: 12px; }
+    .search-wrap input::placeholder { color: #b7ccc3; }
+    .search-mark { position: absolute; left: 12px; top: 9px; color: #b7ccc3; font-size: 14px; pointer-events: none; }
+    .filter-row { display: flex; flex: 0 0 48px; align-items: center; gap: 5px; overflow-x: auto; overflow-y: hidden; margin: 2px 0 8px; padding: 0 4px; scrollbar-width: thin; }
+    .filter { flex: 0 0 auto; white-space: nowrap; border: 1px solid #ffffff2b; border-radius: 99px; background: transparent; color: #cfddd6; padding: 6px 9px; font-size: 10px; }
+    .filter[aria-pressed="true"] { background: var(--mint); border-color: var(--mint); color: var(--forest); font-weight: 700; }
+    .lesson-nav { display: flex; flex: 0 0 auto; flex-direction: column; gap: 3px; }
+    .lesson-link { display: grid; grid-template-columns: 27px 1fr 14px; align-items: center; gap: 8px; width: 100%; text-align: left; color: #dce7e1; border: 0; border-radius: 6px; background: transparent; padding: 8px 9px; font-size: 11px; line-height: 1.25; }
+    .lesson-link:hover { background: #ffffff10; }
+    .lesson-link[aria-current="page"] { background: #f5f5ea; color: var(--forest); font-weight: 700; }
+    .lesson-number { color: #9cb4a9; font: 11px Georgia, serif; }
+    .lesson-link[aria-current="page"] .lesson-number { color: var(--coral); }
+    .done-mark { color: var(--sun); font-size: 12px; }
+    .sidebar-foot { margin-top: auto; padding: 18px 9px 0; color: #a7bdb4; font-size: 10px; line-height: 1.5; border-top: 1px solid #ffffff20; }
+    .sidebar-foot strong { color: #f5f5ea; font-size: 11px; }
+
+    .main-frame { min-width: 0; }
+    .topbar { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 12px 30px; background: rgba(255,254,250,.88); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 3; backdrop-filter: blur(12px); }
+    .top-left { display: flex; align-items: center; gap: 12px; }
+    .mobile-menu { display: none; border: 1px solid var(--line); background: var(--paper); color: var(--ink); border-radius: 6px; padding: 7px 10px; }
+    .eyebrow { color: var(--muted); font-size: 11px; }
+    .top-right { display: flex; align-items: center; gap: 20px; }
+    .progress-copy { display: flex; align-items: center; gap: 10px; font-size: 11px; }
+    .progress-track { width: 114px; height: 6px; border-radius: 10px; overflow: hidden; background: #e3e9e2; }
+    .progress-fill { height: 100%; width: 0; background: var(--coral); border-radius: inherit; transition: width .35s ease; }
+    .progress-value { color: var(--forest); font-weight: 800; min-width: 30px; }
+    .reset-progress { border: 0; background: none; color: var(--muted); font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
+
+    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 322px; align-items: start; gap: 24px; max-width: 1510px; margin: 0 auto; padding: 26px 30px 54px; }
+    .lesson-column { min-width: 0; scroll-margin-top: 82px; }
+    .lesson-head { padding: 6px 0 22px; }
+    .lesson-meta { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 11px; }
+    .lesson-index { color: var(--coral); font: 13px Georgia, serif; }
+    .tag { display: inline-flex; align-items: center; border-radius: 99px; background: var(--mint-pale); color: #315b4e; padding: 5px 9px; font-size: 10px; font-weight: 700; }
+    .tag.time { color: #82621e; background: #f8f0d9; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 9px; font: 500 34px/1.16 Georgia, "Times New Roman", serif; letter-spacing: 0; }
+    .intro { color: #566761; max-width: 760px; margin: 0; font-size: 13px; line-height: 1.7; }
+    .learning-steps { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 16px; }
+    .step-chip { color: #687873; background: transparent; border: 1px solid #d9e1d9; border-radius: 4px; padding: 5px 8px; font-size: 10px; }
+    .step-chip::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 6px 1px 0; border-radius: 50%; background: var(--coral); }
+    .section-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin: 21px 0 9px; }
+    .concept-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-bottom: 21px; }
+    .concept { min-height: 84px; padding: 11px 12px; border-top: 2px solid var(--mint); background: #e9eee7; }
+    .concept:nth-child(2) { border-color: var(--coral); background: #f4e9e3; }
+    .concept:nth-child(3) { border-color: var(--sun); background: #f3efdf; }
+    .concept b { display: block; font: 600 13px Georgia, serif; margin-bottom: 5px; }
+    .concept span { display: block; color: #5c6c65; font-size: 10px; line-height: 1.4; }
+    .deep-dive { margin: 24px 0 22px; padding: 16px 0 18px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+    .detail-block h2 { margin: 0 0 9px; font: 600 16px Georgia, serif; }
+    .detail-block ul, .detail-block ol { margin: 0; padding-left: 18px; color: #586962; font-size: 11px; line-height: 1.65; }
+    .detail-block li { padding: 3px 0 3px 2px; }
+    .challenge-strip { display: grid; grid-template-columns: 145px minmax(0, 1fr); gap: 12px; align-items: start; margin-top: 17px; padding: 12px 14px; background: #e9eee7; border-left: 3px solid var(--sun); }
+    .challenge-strip strong { color: #506550; font-size: 10px; letter-spacing: .4px; text-transform: uppercase; }
+    .challenge-strip p { margin: 0; color: #4f6258; font-size: 11px; line-height: 1.6; }
+    .reading-guide { margin-top: 13px; border-top: 1px solid var(--line); padding-top: 11px; }
+    .reading-guide summary { cursor: pointer; color: #42624f; font-size: 11px; font-weight: 700; }
+    .reading-guide ul { margin: 9px 0; padding-left: 18px; color: #586962; font-size: 10px; line-height: 1.55; }
+    .reading-guide li { padding: 2px 0; }
+    .reading-guide p { margin: 7px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+
+    .code-panel { border-radius: 7px; overflow: hidden; background: var(--code); box-shadow: var(--shadow); }
+    .code-toolbar { min-height: 43px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; color: #c1d1c8; background: #203b32; border-bottom: 1px solid #ffffff13; font-size: 10px; }
+    .code-toolbar strong { color: #f0f1e7; font-size: 11px; font-weight: 700; }
+    .code-actions { display: flex; gap: 6px; }
+    .quiet-button, .run-button { border: 1px solid #ffffff28; border-radius: 4px; color: #e5eee8; background: transparent; padding: 6px 8px; font-size: 10px; }
+    .quiet-button:hover { background: #ffffff12; }
+    .run-button { border-color: var(--sun); background: var(--sun); color: #24332d; font-weight: 800; }
+    .run-button:disabled { opacity: .65; cursor: wait; }
+    .code-input { width: 100%; display: block; resize: vertical; min-height: 158px; border: 0; border-radius: 0; outline: none; padding: 15px 17px; background: var(--code); color: #e1eee6; font: 12px/1.65 "SFMono-Regular", Consolas, "Liberation Mono", monospace; tab-size: 4; }
+    .code-input:focus-visible { outline: 2px solid #e7bd5c; outline-offset: -3px; }
+    .output-panel { min-height: 38px; padding: 9px 14px; color: #c4d4ca; border-top: 1px solid #ffffff13; font: 11px/1.5 "SFMono-Regular", Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .output-panel:empty::before { content: "A futtatás eredménye itt jelenik meg."; color: #839890; font-family: "Avenir Next", Avenir, sans-serif; }
+    .runner-note { color: #77877e; font-size: 10px; line-height: 1.5; margin: 8px 2px 0; }
+    .task-panel { margin-top: 22px; padding: 16px 17px; border-left: 3px solid var(--coral); background: var(--paper); }
+    .task-panel h2 { margin-bottom: 8px; font: 600 17px Georgia, serif; }
+    .task-panel p { margin-bottom: 0; color: #586962; font-size: 12px; line-height: 1.65; }
+    .task-list-title { margin: 15px 0 7px; color: #496257; font-size: 10px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase; }
+    .task-list { margin: 0; padding-left: 19px; color: #586962; font-size: 11px; line-height: 1.6; }
+    .task-list li { padding: 4px 0 4px 3px; }
+    .task-hint { margin-top: 10px; border: 0; border-bottom: 1px solid #b5c4bb; padding: 2px 0; color: #436956; background: transparent; font-size: 10px; font-weight: 700; }
+    .hint-text { display: none; margin: 10px 0 0; padding: 9px 11px; background: var(--mint-pale); color: #39594a; font-size: 11px; line-height: 1.5; }
+    .hint-text.visible { display: block; }
+    .notes-label { display: block; color: var(--muted); font-size: 10px; font-weight: 700; margin: 16px 0 6px; }
+    .notes { width: 100%; min-height: 65px; resize: vertical; border: 1px solid var(--line); border-radius: 4px; padding: 9px; background: #fff; color: var(--ink); font-size: 11px; line-height: 1.5; }
+    .save-state { min-height: 15px; color: #63826e; font-size: 9px; margin-top: 4px; }
+
+    .practice-column { position: sticky; top: 88px; display: flex; flex-direction: column; gap: 13px; }
+    .quiz-panel { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 17px; }
+    .quiz-kicker { color: var(--coral); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .9px; margin-bottom: 9px; }
+    .quiz-panel h2 { margin-bottom: 9px; font: 600 16px/1.35 Georgia, serif; }
+    .quiz-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 0 7px; color: var(--muted); font-size: 9px; }
+    .quiz-position { color: var(--coral); font-weight: 800; }
+    .quiz-score { color: #486956; font-weight: 700; text-align: center; }
+    .quiz-progress { height: 4px; margin-bottom: 11px; overflow: hidden; border-radius: 5px; background: #e3e9e2; }
+    .quiz-progress-fill { width: 0; height: 100%; background: var(--coral); transition: width .25s ease; }
+    .answers { display: flex; flex-direction: column; gap: 6px; }
+    .answer { width: 100%; text-align: left; border: 1px solid var(--line); border-radius: 4px; color: #4e5f58; background: #fff; padding: 9px 10px; font-size: 10px; line-height: 1.4; }
+    .answer:hover { border-color: #89a998; }
+    .answer[aria-pressed="true"] { border-color: #3f795e; background: var(--mint-pale); color: #284a3c; }
+    .answer.correct { border-color: #42815d; background: #e3f1e7; color: #27543c; }
+    .answer.incorrect { border-color: #cc775e; background: #f9e9e3; color: #773e30; }
+    .quiz-feedback { min-height: 18px; margin: 9px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .quiz-feedback.good { color: #36714e; }
+    .quiz-feedback.bad { color: #a24d38; }
+    .quiz-controls { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 7px; margin-top: 10px; }
+    .quiz-controls button { border: 1px solid #c8d1c8; border-radius: 4px; background: transparent; color: #50635a; padding: 7px 9px; font-size: 9px; }
+    .quiz-controls button:hover:not(:disabled) { background: var(--mint-pale); }
+    .quiz-controls button:disabled { opacity: .45; cursor: default; }
+    .project-panel { background: var(--forest); color: #eef4ed; border-radius: 6px; padding: 16px 17px; }
+    .project-panel .quiz-kicker { color: var(--sun); }
+    .project-panel h2 { margin-bottom: 7px; font: 600 16px Georgia, serif; }
+    .project-panel p { margin: 0; color: #ccdad2; font-size: 10px; line-height: 1.55; }
+    .complete-button { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; border: 1px solid var(--forest); border-radius: 5px; color: white; background: var(--forest); padding: 12px 14px; font-weight: 700; font-size: 11px; text-align: left; }
+    .complete-button:hover { background: var(--forest-soft); }
+    .complete-button.is-done { background: #dcebe0; color: #264c39; border-color: #c5dccd; }
+    .complete-button span:last-child { font-size: 15px; }
+    .next-button { width: 100%; margin-top: -5px; border: 1px solid #c8d1c8; border-radius: 5px; background: transparent; color: #50635a; padding: 10px; font-size: 10px; }
+    .next-button:hover { background: #e6ebe5; }
+    .empty-state { padding: 32px 8px; color: var(--muted); font-size: 13px; }
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 14px); opacity: 0; pointer-events: none; z-index: 10; background: var(--forest); color: white; padding: 10px 14px; border-radius: 5px; font-size: 11px; transition: .2s ease; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .scrim { display: none; }
+
+    @media (max-width: 1060px) {
+      .workspace { grid-template-columns: minmax(0, 1fr) 290px; gap: 17px; padding: 22px 20px 42px; }
+      .topbar { padding-inline: 20px; }
+      .concept-strip { grid-template-columns: 1fr; gap: 6px; }
+      .concept { min-height: 0; }
+    }
+    @media (max-width: 820px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: fixed; left: 0; top: 0; width: min(300px, 86vw); transform: translateX(-102%); transition: transform .24s ease; box-shadow: var(--shadow); }
+      .sidebar.open { transform: translateX(0); }
+      .scrim { display: block; position: fixed; inset: 0; z-index: 4; background: #11251f77; opacity: 0; pointer-events: none; transition: opacity .2s; }
+      .scrim.visible { opacity: 1; pointer-events: auto; }
+      .mobile-menu { display: inline-flex; align-items: center; gap: 6px; }
+      .workspace { grid-template-columns: minmax(0, 1fr) 300px; }
+    }
+    @media (max-width: 680px) {
+      .topbar { padding: 10px 13px; min-height: 58px; }
+      .top-right { gap: 7px; }
+      .progress-track { width: 65px; }
+      .progress-copy { gap: 5px; }
+      .reset-progress { display: none; }
+      .workspace { display: block; padding: 18px 14px 32px; }
+      .practice-column { position: static; margin-top: 20px; }
+      h1 { font-size: 29px; }
+      .concept-strip { grid-template-columns: repeat(3, minmax(0,1fr)); }
+      .concept { padding: 9px 8px; }
+      .concept b { font-size: 11px; }
+      .concept span { font-size: 9px; }
+      .detail-grid { grid-template-columns: 1fr; gap: 17px; }
+      .challenge-strip { grid-template-columns: 1fr; gap: 5px; }
+      .intro { font-size: 12px; }
+      .code-input { min-height: 145px; font-size: 11px; }
+      .top-left .eyebrow { display: none; }
+      .brand strong { font-size: 17px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar" aria-label="Tananyag navigáció">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">Py</div>
+        <div><strong>Tanulóműhely</strong><small>Python az alapoktól</small></div>
+      </div>
+      <p class="side-label">Tananyag</p>
+      <label class="search-wrap">
+        <span class="search-mark" aria-hidden="true">⌕</span>
+        <input id="search" type="search" placeholder="Téma keresése..." autocomplete="off" aria-label="Téma keresése">
+      </label>
+      <div class="filter-row" id="filters" aria-label="Témakör szűrése"></div>
+      <nav class="lesson-nav" id="lessonNav" aria-label="Leckék"></nav>
+      <div class="sidebar-foot"><strong id="sideProgress">0 / 23 lecke</strong><br>A haladásod ezen az eszközön automatikusan mentődik.</div>
+    </aside>
+    <div class="scrim" id="scrim"></div>
+
+    <div class="main-frame">
+      <header class="topbar">
+        <div class="top-left">
+          <button type="button" class="mobile-menu" id="menuButton" aria-expanded="false" aria-controls="sidebar">☰ <span>Leckék</span></button>
+          <span class="eyebrow">Python tanulási útvonal</span>
+        </div>
+        <div class="top-right">
+          <div class="progress-copy" aria-label="Általános haladás">
+            <span class="progress-track"><span class="progress-fill" id="progressFill"></span></span>
+            <span class="progress-value" id="progressText">0%</span>
+          </div>
+          <button type="button" class="reset-progress" id="resetProgress">Haladás törlése</button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="lesson-column" id="lessonContent" aria-live="polite"></section>
+        <aside class="practice-column" id="practiceContent" aria-label="Gyakorlás"></aside>
+      </main>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="lesson-details.js"></script>
+  <script src="advanced-lessons.js"></script>
+  <script src="quiz-banks.js"></script>
+  <script>
+    const lessons = [
+      { title: "Bevezetés és algoritmusok", track: "Alapok", time: "10 perc", summary: "A programozás egy feladat lépésekre bontása, majd ezek pontos leírása a számítógép számára. Először a problémát értjük meg, utána választunk adatokat és utasításokat.", focus: ["Algoritmus", "Adat", "Python"], example: `elso = 12\nmasodik = 8\neredmeny = elso + masodik\nprint(eredmeny)`, output: "20", task: "Írd le egy téglalap területének kiszámítását lépésekben, majd készíts programot, amely két megadott oldalhosszból számol.", hint: "A terület képlete: szélesség × magasság. Először adj értéket mindkét oldalnak, aztán szorozd össze őket.", question: "Mi az algoritmus?", answers: ["Egy feladat megoldásának véges, rendezett lépéssora.", "A Python egyik adattípusa.", "Egy programozó billentyűzete."], correct: 0, why: "Az algoritmus pontos lépések sorozata, amely egy feladatot old meg." },
+      { title: "VS Code fejlesztőkörnyezet", track: "Alapok", time: "12 perc", summary: "A VS Code-ban a programot .py fájlba írod és mented. A Python-bővítménnyel kiválasztod az interpretert, majd a Run Python File gombbal vagy a terminálból futtatod. A kimenetet a terminálban, a kódszerkesztőben pedig a hibajelzéseket látod.", focus: [".py fájl", "Python-bővítmény", "Futtatás és terminál"], example: `print("Szia, Python!")`, output: "Szia, Python!", task: "Hozz létre egy teglalap.py fájlt, számítsd ki két oldalból a téglalap területét, majd futtasd a Run Python File gombbal és a VS Code termináljából is.", hint: "Nyiss meg egy projektmappát, hozz létre benne teglalap.py fájlt, majd válassz interpretert a Python: Select Interpreter paranccsal. A terminálból macOS-en próbáld: python3 teglalap.py.", question: "Hol jelenik meg a Run Python File paranccsal indított program kimenete?", answers: ["A VS Code termináljában.", "A fájl nevében.", "A Python-bővítmény beállításai között."], correct: 0, why: "A Run Python File a programot a VS Code termináljában futtatja; ott jelenik meg a kimenet és a futási hiba is." },
+      { title: "Alaptípusok és műveletek", track: "Alapok", time: "18 perc", summary: "A számok, szövegek, logikai értékek és None különböző szerepet töltenek be. A változó nevet ad egy értéknek; az értékadás után később is felhasználhatod vagy új értékkel cserélheted le.", focus: ["int / float", "str / bool", "Műveletek"], example: `egesz = 7\nlebego = 1.5\nszoveg = "Python"\naktiv = True\nprint(7 / 3, 7 // 3, 7 % 3, 2 ** 5)\nprint(type(egesz), szoveg[0])`, output: "2.3333333333333335 2 1 32\n<class 'int'> P", task: "Egy kör sugarából számítsd ki a kerületet és a területet. Próbálj ki egész és tizedes sugarat, majd ellenőrizd az eredmények típusát.", hint: "Használd a math.pi értéket. A kerület 2 * pi * r, a terület pi * r ** 2.", question: "Mit ad eredményül a 7 // 3 kifejezés?", answers: ["2", "2.333...", "1"], correct: 0, why: "Az egész osztás a hányados egész részét adja vissza." },
+      { title: "Kollekciók", track: "Adatok", time: "20 perc", summary: "A tuple rögzített sorozat, a lista módosítható, a halmaz egyedi elemeket tárol, a szótár pedig kulcsokhoz rendel értékeket. A megfelelő adatszerkezet megkönnyíti az adatok kezelését.", focus: ["tuple", "list / set", "dict"], example: `nevek = ["Anna", "Béla", "Anna"]\negyedi = set(nevek)\ntanulo = {"nev": "Anna", "pont": 18}\nkoordinata = (3, 4)\nnevek.append("Csilla")\nprint(sorted(egyedi), tanulo["nev"], koordinata[0])`, output: "['Anna', 'Béla'] Anna 3", task: "Tárolj termékeket listában, termék–ár párokat szótárban, majd írd ki az egyedi termékeket és a teljes összeget.", hint: "A teljes összeghez add össze a szótár értékeit: sum(arlista.values()).", question: "Melyik adatszerkezet tárol kulcs-érték párokat?", answers: ["dict", "tuple", "set"], correct: 0, why: "A dict kulcsokhoz rendel értékeket, például névhez pontszámot." },
+      { title: "Típuskonverzió", track: "Alapok", time: "12 perc", summary: "Az input() szöveget ad, akkor is, ha a felhasználó számot ír be. Konverzióval alakíthatod megfelelő típusúvá az értéket; hibás szöveg átalakításakor kivétel keletkezhet.", focus: ["int()", "float()", "ValueError"], example: `szoveg = "21"\nszam = int(szoveg)\nprint(szam * 2)\nprint(float("3.5") + 1)`, output: "42\n4.5", task: "Kérj be két tizedes számot, alakítsd őket float típusúvá, és írd ki az összegüket és hányadosukat. Kezeld a hibás bemenetet.", hint: "Tedd a float(input(...)) átalakítást try blokkba, és a ValueError ágat kezeld külön.", question: "Milyen típusú értéket ad vissza az input()?", answers: ["str", "int", "bool"], correct: 0, why: "Az input() mindig szöveget ad vissza, ezért kell például int() vagy float()." },
+      { title: "Bemenet, kimenet, formázás", track: "Alapok", time: "15 perc", summary: "Az input() bekéri, a print() megjeleníti az adatot. Az f-string olvasható módon illeszti a változókat a szövegbe, és számok formázására is alkalmas.", focus: ["input()", "print()", "f-string"], example: `nev = "Lili"\npont = 7 / 3\nprint(f"{nev}: {pont:.2f} pont")`, output: "Lili: 2.33 pont", task: "Készíts nyugtát: kérd be a termék nevét, darabszámát és egységárát, majd írd ki a végösszeget két tizedesjeggyel.", hint: "A végösszeg darabszám * egységár. A két tizedesjegyhez használd a {osszeg:.2f} formátumot.", question: "Mit jelent az f-stringben a :.2f formázás?", answers: ["A számot két tizedesjeggyel írja ki.", "Egész számmá alakítja a szöveget.", "Két sort fűz össze."], correct: 0, why: "A .2f két tizedesjegyet kér a lebegőpontos érték megjelenítéséhez." },
+      { title: "Vezérlés: feltétel és ciklus", track: "Logika", time: "22 perc", summary: "Az if/elif/else feltétel alapján választ ágat. A for egy sorozat elemein halad végig; a while addig ismétel, amíg a feltétel igaz. A kettőspont utáni behúzás jelöli a blokkot.", focus: ["if / elif", "for", "while"], example: `for szam in range(1, 6):\n    if szam % 2 == 0:\n        print(f"{szam}: páros")\n    else:\n        print(f"{szam}: páratlan")`, output: "1: páratlan\n2: páros\n3: páratlan\n4: páros\n5: páratlan", task: "Készíts számkitaláló játékot: jelezd, hogy a tipp kisebb vagy nagyobb a célszámnál, számold a próbákat, és állj meg a helyes találatnál.", hint: "A while ciklus addig fusson, amíg a tipp nem egyenlő a célszámmal. Figyelj rá, hogy a tipp minden körben frissüljön.", question: "Melyik jelet írjuk egy kódblokk elé?", answers: ["Kettőspontot (:)", "Pontosvesszőt (;)", "Vesszőt (,)"], correct: 0, why: "A Pythonban az if, for, while és def sorát kettőspont zárja; a blokkot behúzás jelöli." },
+      { title: "Comprehension kifejezések", track: "Logika", time: "15 perc", summary: "A comprehension tömören hoz létre új listát, halmazt vagy szótárat egy iterálható sorozatból, opcionális szűrőfeltétellel. Csak akkor használd, ha az eredmény így is könnyen olvasható.", focus: ["Átalakítás", "Szűrés", "Lista"], example: `negyzetek = [n * n for n in range(1, 8)]\nparosak = [n for n in range(10) if n % 2 == 0]\nprint(negyzetek)\nprint(parosak)`, output: "[1, 4, 9, 16, 25, 36, 49]\n[0, 2, 4, 6, 8]", task: "Egy Celsius-listából készíts Fahrenheit-listát, majd szűrd ki a 0 fok feletti értékeket.", hint: "A Fahrenheit-átváltás minden elemre ugyanaz: c * 9 / 5 + 32.", question: "Hová kerül a comprehensionben a szűrés feltétele?", answers: ["Az if után, a for kifejezés végén.", "A lista elé, a kettőspont után.", "Csak külön függvénybe kerülhet."], correct: 0, why: "A feltételes comprehension alakja: [kifejezés for elem in sorozat if feltétel]." },
+      { title: "Rendezés", track: "Adatok", time: "12 perc", summary: "A sorted() új rendezett listát ad, a lista sort() metódusa helyben rendezi a listát. A key paraméterrel megadhatod, milyen tulajdonság szerint történjen a rendezés.", focus: ["sorted()", "sort()", "key"], example: `nevek = ["Zita", "Alma", "Bence"]\nprint(sorted(nevek))\nprint(sorted(nevek, key=len, reverse=True))`, output: "['Alma', 'Bence', 'Zita']\n['Bence', 'Alma', 'Zita']", task: "Rendezz diákokat pontszám szerint csökkenő sorrendbe; azonos pontszámnál a név döntsön.", hint: "A key lehet tuple-t visszaadó függvény: lambda diak: (-diak[\"pont\"], diak[\"nev\"]).", question: "Melyik függvény ad új, rendezett listát?", answers: ["sorted()", "sort()", "order()"], correct: 0, why: "A sorted() új listát készít; a list.sort() a meglévő listát rendezi helyben." },
+      { title: "Fájlkezelés", track: "Adatok", time: "20 perc", summary: "A fájlokat olvashatod, írhatod, bővítheted és pozicionálhatod. A with open(...) gondoskodik a fájl lezárásáról; szöveges fájlnál add meg az UTF-8 kódolást.", focus: ["open()", "with", "Olvasás / írás"], example: `with open("jegyzet.txt", "w", encoding="utf-8") as fajl:\n    fajl.write("Első sor\\nMásodik sor\\n")\n\nwith open("jegyzet.txt", "r", encoding="utf-8") as fajl:\n    sorok = fajl.readlines()\nprint(sorok)`, output: "['Első sor\\n', 'Második sor\\n']", task: "Olvass be egy szövegfájlt, számold meg a sorokat, szavakat és szavankénti előfordulásokat, majd mentsd az eredményt fájlba.", hint: "A fájl sorait bejárhatod for sor in fajl alakban. A szavakat kisbetűsítsd és tisztítsd meg az írásjelektől.", question: "Miért hasznos a with open(...)?", answers: ["A blokk végén automatikusan lezárja a fájlt.", "Minden hibát automatikusan kijavít.", "A fájlt mindig törli kilépéskor."], correct: 0, why: "A with kezeli az erőforrás lezárását akkor is, ha a blokkban hiba történik." },
+      { title: "Kicsomagolás", track: "Adatok", time: "10 perc", summary: "Sorozat elemeit egyszerre több változóhoz rendelheted. A csillagos változó összegyűjti a maradék elemeket; a * és ** függvényhívásnál argumentumokat bont ki.", focus: ["Unpacking", "*args", "**kwargs"], example: `elso, *kozep, utolso = [10, 20, 30, 40, 50]\nx, y = (3, 4)\nprint(elso, kozep, utolso, x, y)`, output: "10 [20, 30, 40] 50 3 4", task: "Írj függvényt, amely nevet, kort és tetszőleges számú jegyet fogad. Add át a jegyeket kicsomagolt tuple-ből.", hint: "A függvénynek adhatsz változó számú pozicionális paramétert *jegyek formában.", question: "Mit gyűjt össze a csillagos célváltozó az unpacking során?", answers: ["A maradék elemeket egy listába.", "Csak az első elemet.", "Az összes kulcsot szöveggé alakítja."], correct: 0, why: "A csillaggal jelölt célváltozó a neki jutó maradék elemek listáját kapja." },
+      { title: "Szeletelés és indexelés", track: "Adatok", time: "14 perc", summary: "A szeletelés az [eleje:vég:lépés] alakban választ ki elemeket. A végindex kimarad, a negatív index a sorozat végétől számol, a negatív lépés pedig visszafelé járja be.", focus: ["Slicing", "Negatív index", "Sekély másolat"], example: `szoveg = "programozas"\nprint(szoveg[0:7])\nprint(szoveg[-3:])\nprint(szoveg[::-1])`, output: "program\nzas\nsazomargorp", task: "Készíts listamásolatot, válaszd ki minden második elemét, fordítsd meg, majd nézd meg, hogyan viselkedik a beágyazott lista sekély másolatnál.", hint: "A lista[:] sekély másolat. A beágyazott listák másolásához a copy.deepcopy() lehet szükséges.", question: "Benne van-e a szeletelés végindexe az eredményben?", answers: ["Nem, a végindex kimarad.", "Igen, mindig benne van.", "Csak szövegnél marad ki."], correct: 0, why: "A Python-szeletelés a kezdőindexet tartalmazza, a végindexet nem." },
+      { title: "Haladó iterálás", track: "Adatok", time: "13 perc", summary: "Az enumerate() indexet és értéket ad együtt, a zip() több sorozat megfelelő elemeit párosítja. Ezekkel egyszerűbb és olvashatóbb lehet sok ciklus, mint kézzel indexelni.", focus: ["enumerate()", "zip()", "Iterálható"], example: `nevek = ["Anna", "Béla"]\npontok = [18, 15]\nfor sorszam, (nev, pont) in enumerate(zip(nevek, pontok), start=1):\n    print(sorszam, nev, pont)`, output: "1 Anna 18\n2 Béla 15", task: "Párosíts név- és pontlistát, jelezd, ha eltér a hosszuk, majd írd ki a legmagasabb pontszámot elérő tanulót.", hint: "A zip() a rövidebb sorozat végén megáll. A hossz ellenőrzéséhez hasonlítsd össze a len() értékeket.", question: "Mit ad az enumerate(nevek) egy ciklusban?", answers: ["Indexet és értéket.", "Csak a lista hosszát.", "A lista rendezett másolatát."], correct: 0, why: "Az enumerate minden lépésben (index, érték) párt ad." },
+      { title: "Függvények", track: "Függvények", time: "20 perc", summary: "A függvény névvel ellátott, újra felhasználható kódrészlet. Paramétereket kaphat, returnnel értéket adhat vissza, és más függvényeknek átadható vagy azokból visszaadható.", focus: ["def / return", "Paraméterek", "Hatókör"], example: `def atlag(szamok):\n    if not szamok:\n        return None\n    return sum(szamok) / len(szamok)\n\nprint(atlag([3, 6, 9]))`, output: "6.0", task: "Bontsd függvényekre a számológépet: külön függvény kérje be az adatot, végezze el a műveletet, és jelenítse meg az eredményt. Teszteld üres és hibás bemenettel.", hint: "Minden függvénynek legyen egy világos feladata. A számítási függvény értéket adjon vissza, ne csak kiírja.", question: "Mire szolgál a return?", answers: ["Értéket ad vissza és befejezi a függvény futását.", "Új ciklust indít.", "Beolvassa a billentyűzetet."], correct: 0, why: "A return visszaadja a hívónak az eredményt, majd kilép a függvényből." },
+      { title: "Funkcionális eszközök", track: "Függvények", time: "14 perc", summary: "A lambda rövid, névtelen függvényt ír le. A map() átalakít, a filter() szűr; mindkettőnél függvényt adsz át. Ugyanez comprehensionnel is megoldható.", focus: ["lambda", "map()", "filter()"], example: `szamok = [1, 2, 3, 4, 5]\nnegyzetek = list(map(lambda n: n ** 2, szamok))\nparosak = list(filter(lambda n: n % 2 == 0, szamok))\nprint(negyzetek, parosak)`, output: "[1, 4, 9, 16, 25] [2, 4]", task: "Szűrj ki legalább öt betűs szavakat egy listából, alakítsd őket kisbetűssé map/filterrel, majd oldd meg comprehensionnel is.", hint: "A map() minden elemre alkalmazza a függvényt; a filter() csak az igaz értéket adó elemeket tartja meg.", question: "Melyik függvény szűri ki a nem megfelelő elemeket?", answers: ["filter()", "map()", "lambda()"], correct: 0, why: "A filter() feltétele alapján tart meg elemeket; a map() átalakítja azokat." },
+      { title: "Modulok és csomagok", track: "Függvények", time: "13 perc", summary: "A modul Python-fájl, amely függvényeket, osztályokat és változókat tartalmaz. Az import újrafelhasználhatóvá teszi a kódot; a csomag összetartozó modulok gyűjteménye.", focus: ["import", "Saját modul", "Csomag"], example: `import math as matek\nprint(matek.sqrt(81))`, output: "9.0", task: "Készíts sajat_matek.py modult két függvénnyel, majd importáld és használd egy külön programból.", hint: "A két fájl legyen ugyanabban a mappában. Kerüld a beépített modulokkal azonos fájlneveket, például math.py.", question: "Miért kerüljük általában a from modul import * alakot?", answers: ["Mert nem derül ki egyértelműen, honnan származnak a nevek.", "Mert Pythonban nincs csillag karakter.", "Mert csak számokat lehet importálni."], correct: 0, why: "A csillagos import névütközést és nehezen követhető kódot okozhat." },
+      { title: "Standard könyvtár", track: "Könyvtárak", time: "25 perc", summary: "A Python standard könyvtára sok gyakori feladathoz ad eszközt telepítés nélkül: dátum, matematika, véletlen értékek, gyűjtemények, fájlok, folyamatok és URL-ek kezeléséhez.", focus: ["datetime / time", "collections / copy", "os / gzip / urllib"], example: `from datetime import date\nfrom collections import Counter\nimport math\n\nprint(date.today())\nprint(Counter("banán"))\nprint(math.sqrt(81))`, output: "A mai dátum\nKarakterenkénti előfordulások\n9.0", task: "Válassz legalább három modult a datetime, time, math, random, collections, copy, glob, gzip, os, pickle, subprocess és urllib közül. Mindegyikhez írj példát, majd oldj meg velük egy kis feladatot.", hint: "Kezdd azzal, hogy importálod a modult és megnézed a dir() vagy help() kimenetét. Pickle-fájlt csak megbízható forrásból tölts be.", question: "Melyik modul véletlen választásra való?", answers: ["random", "gzip", "glob"], correct: 0, why: "A random modul véletlen számokat és választásokat hoz létre." },
+      { title: "Kivételkezelés", track: "Hibakeresés", time: "15 perc", summary: "A kivétel futás közben jelzi, hogy valami nem sikerült. A try/except célzottan kezelhet hibát; az else a sikeres lefutáskor, a finally pedig mindenképpen lefut.", focus: ["try / except", "ValueError", "raise"], example: `def osztas(a, b):\n    try:\n        return a / b\n    except ZeroDivisionError:\n        return "Nullával nem osztunk."\n\nprint(osztas(10, 0))`, output: "Nullával nem osztunk.", task: "Kérj be egy egész számot, kezeld a ValueError-t, és kérdezz újra addig, amíg érvényes értéket nem kapsz.", hint: "A try blokkba tedd a konverziót. A except ValueError ágban írj hibaüzenetet, majd folytasd a ciklust.", question: "Miért jobb konkrét kivételt elkapni az except Exception helyett?", answers: ["Mert nem nyelünk el véletlenül más, váratlan hibákat.", "Mert gyorsabban gépelhető.", "Mert az Exception nem létezik."], correct: 0, why: "A konkrét kivétel kezelése megőrzi a nem várt hibák láthatóságát." },
+      { title: "Hibakeresés", track: "Hibakeresés", time: "15 perc", summary: "Olvasd végig a tracebacket, keresd meg a saját kódodban az első releváns sort, majd ellenőrizd a változók értékét. A breakpointtal megállíthatod, léptetheted és vizsgálhatod a programot.", focus: ["Traceback", "Breakpoint", "Logikai hiba"], example: `def atlag(lista):\n    print("Vizsgált lista:", lista)\n    return sum(lista) / len(lista)\n\nprint(atlag([2, 4, 6]))`, output: "Vizsgált lista: [2, 4, 6]\n4.0", task: "Keress egy logikai és egy futásidejű hibát egy kis programban. Jegyezd fel, milyen bemenettel jelentkeznek, és teszteld a javítást.", hint: "Először próbáld megismételni a hibát a lehető legkisebb bemenettel. Ezután lépj végig a programon breakpointtal.", question: "Mi az első hasznos lépés traceback esetén?", answers: ["Elolvasni a hiba típusát és a saját kódra mutató sort.", "Kitörölni az utolsó függvényt.", "Újraindítani a gépet."], correct: 0, why: "A traceback megmutatja, hol és milyen hiba történt; ez irányítja a következő vizsgálatot." },
+      { title: "Objektumorientált programozás", track: "Haladó", time: "25 perc", summary: "Az osztály egy saját adattípus terve, az objektum ennek egy példánya. Attribútumokkal állapotot tárolsz, metódusokkal viselkedést írsz le; a speciális metódusok a Python műveleteihez kapcsolják az osztályt.", focus: ["Osztály / objektum", "Öröklés", "Dunder metódusok"], example: `class Teglalap:\n    def __init__(self, szelesseg, magassag):\n        self.szelesseg = szelesseg\n        self.magassag = magassag\n\n    def terulet(self):\n        return self.szelesseg * self.magassag\n\n    def __str__(self):\n        return f"{self.szelesseg} x {self.magassag}"\n\nalakzat = Teglalap(4, 3)\nprint(alakzat, alakzat.terulet())`, output: "4 x 3 12", task: "Készíts Vector osztályt, amely támogatja a vektorösszeadást, kivonást, indexelést, hosszmérést és olvasható megjelenítést. Ezután készíts Shape alaposztályt és Rectangle alosztályt.", hint: "Az összeadást a __add__, az indexelést a __getitem__, a szöveges alakot a __str__ metódusban valósítsd meg.", question: "Mire való az __init__ metódus?", answers: ["Az új objektum kezdeti állapotának beállítására.", "A fájl automatikus törlésére.", "A program leállítására."], correct: 0, why: "Az __init__ inicializálja az új példány attribútumait." },
+      { title: "NumPy tömbök", track: "Adatmunka", time: "25 perc", summary: "A NumPy tömb hatékony, azonos típusú többdimenziós adatokat tárol. Ismerd meg a shape-et, dimenziókat, szeletelést, elemenkénti műveleteket, aggregálást, reshape-et, rendezést és broadcastingot.", focus: ["ndarray", "Broadcasting", "Statisztika"], example: `import numpy as np\nadat = np.array([[2, 3, 4], [5, 6, 7]])\nprint(adat.shape, adat.ndim)\nprint(adat[:, 1], adat.mean(axis=0))\nprint(adat + np.array([10, 20, 30]))`, output: "(2, 3) 2\n[3 6] [3.5 4.5 5.5]\n[[12 23 34]\n [15 26 37]]", task: "Készíts kétdimenziós hőmérséklet-tömböt, számíts sor- és oszlopátlagot, válassz résztömböt, módosíts típust, majd próbálj kompatibilis és inkompatibilis broadcastingot.", hint: "A broadcasting a jobb szélső dimenzióktól kezdve egyezteti a méreteket. A dimenziók akkor kompatibilisek, ha egyenlők vagy valamelyik 1.", question: "Mit jelent az adat.shape értéke?", answers: ["A tömb dimenzióinak méretét.", "Az elemek összegét.", "Az adattípus nevét."], correct: 0, why: "A shape dimenziónként megadja a tömb méretét." },
+      { title: "pandas táblázatok", track: "Adatmunka", time: "25 perc", summary: "A Series egydimenziós, a DataFrame táblázatos adatszerkezet. CSV-ből olvashatsz be, sorokat szűrhetsz, oszlopokat választhatsz, hiányzó adatot kezelhetsz, majd groupby-jal csoportosíthatsz és összesíthetsz.", focus: ["Series / DataFrame", "Szűrés", "groupby"], example: `import pandas as pd\nadat = pd.DataFrame({"csapat": ["A", "A", "B"], "pont": [3, 5, 4]})\nprint(adat[adat["pont"] >= 4])\nprint(adat.groupby("csapat")["pont"].sum())`, output: "A legalább 4 pontos sorok\ncsapatonként összegzett pontok", task: "Olvass be mérkőzésadatokat CSV-ből; válaszd ki egy csapat hazai és idegenbeli meccseit, számold össze a góljait, rendezd a csapatokat, és kezeld a hiányzó adatokat.", hint: "A CSV beolvasásához használd a pd.read_csv() függvényt. A csoportos összegzéshez a groupby(...)[...].sum() jó kiindulás.", question: "Melyik művelet csoportosítja az adatokat egy oszlop értékei alapján?", answers: ["groupby()", "reshape()", "append()"], correct: 0, why: "A pandas groupby() csoportokba rendezi a sorokat, amelyeken összesítő művelet végezhető." },
+      { title: "Összetett záróprojektek", track: "Projektek", time: "saját tempó", summary: "A komplex program több korábban tanult témát kapcsol össze. Először tervezd meg az adatokat és a folyamatot, utána készíts kis működő változatot, majd bővítsd tesztekkel, fájlkezeléssel és hibakezeléssel.", focus: ["Tervezés", "Tesztelés", "Önálló munka"], example: `def atlag(pontok):\n    if not pontok:\n        return 0\n    return sum(pontok) / len(pontok)\n\nassert atlag([2, 4, 6]) == 4\nprint("A teszt sikeres")`, output: "A teszt sikeres", task: "Válassz egy projektet, bontsd kisebb feladatokra, készíts működő első változatot, majd bővítsd mentéssel, hibás bemenetek kezelésével és automatikus tesztekkel.", hint: "Választható ötletek: fájlalapú teendőlista, kvízjáték, CSV-adatelemző vagy vektor- és alakzatkönyvtár.", question: "Mi a legjobb első lépés egy nagyobb projekt előtt?", answers: ["A cél és a részfeladatok megtervezése.", "Az összes kód egyben való begépelése.", "A tesztek és példák törlése."], correct: 0, why: "A feladat lebontása segít egy-egy kis részt megvalósítani és ellenőrizni." }
+    ];
+
+    const practiceSets = [
+      ["Számítsd ki 11 egész osztását 3-mal és a maradékát.", "A (12.5, 4.2) pont távolsága az origótól és egy 3.2 sugarú kör kerülete és területe."],
+      ["Hozz létre hello.py fájlt, futtasd a Run Python File gombbal, majd a terminálban is.", "Írj teglalap.py programot két oldalból; módosítsd az egyik értéket, mentsd, és futtasd újra."],
+      ["Két egész számmal jelenítsd meg az egész hányadost és a maradékot.", "Számold ki egy megadott pont távolságát az origótól, majd egy kör kerületét és területét."],
+      ["Tárolj három nevet és életkort tuple-ökben; kérj be egy nevet, és vizsgáld meg, szerepel-e az adatok között.", "Egy számlistából ciklussal számíts összeget, átlagot, minimumot és maximumot.", "Fordíts meg egy szöveget úgy, hogy karaktereit listába másolod, majd a listát megfordítod."],
+      ["Kérj be három tizedes számot, és alakítsd őket float típusúvá.", "Kérd be egy téglatest három oldalát, majd számítsd ki a felszínét és a térfogatát."],
+      ["Kérd be a nevet és az életkort, majd formázott üzenetben becsüld meg a születési évet.", "Kérj be egy tört számot, és jelenítsd meg négy tizedesjegyre kerekítve.", "Kérd be egy téglatest oldalait, és írj ki szépen formázott felszínt és térfogatot."],
+      ["Kérj be két számot, és írd ki, melyik a nagyobb, vagy hogy egyenlők.", "Érdemjegy alapján írj szöveges értékelést; kezeld az 1–5 tartományon kívüli értéket is.", "Kérj be három számot, keresd meg a legkisebbet, majd írd ki 1-től 10-ig a páros számokat while és for ciklussal.", "Kérj be n darab jegyet, és számítsd ki az átlagukat."],
+      ["Készíts listát 1 és 20 közötti páros számok négyzeteiből.", "Szűrj ki egy szólistából minden legalább öt betűs szót, és alakítsd őket kisbetűssé."],
+      ["Rendezd a jegyeket növekvő és csökkenő sorrendbe.", "Rendezz neveket hosszúság szerint, majd diákokat pontszám szerint; döntetlennél a név döntsön."],
+      ["Ments több bekért szót fájlba, olvasd vissza, majd számold meg a sorokat.", "Szövegfájl szavaiból készíts gyakorisági listát; ne különböztesd meg a kis- és nagybetűket, és hagyd figyelmen kívül a szóvégi írásjeleket."],
+      ["Csomagold egy személy nevét, korát és jegyeit tuple-be, majd bontsd szét változókba.", "Egy listában az első elemet és a maradékot külön változókba kicsomagolva számold ki a jegyek átlagát."],
+      ["Egy bekért szöveget jeleníts meg fordított sorrendben szeleteléssel.", "Egy listából válaszd ki minden második elemet, az utolsó hármat és a fordított másolatot."],
+      ["Két listából zip segítségével alkoss név–jegy párokat; enumerate-tel sorszámozd őket.", "A párokból számíts átlagot és keresd meg a legjobb jegyet; jelezd, ha a listák hossza eltér."],
+      ["Írj függvényt, amely egy számlista összegét, átlagát, minimumát és maximumát adja vissza.", "Külön függvényekkel számítsd ki egy kör kerületét és területét, majd ellenőrizd két különböző sugárral."],
+      ["map segítségével váltsd át egy hőmérsékletlista értékeit Celsiusról Fahrenheitre.", "filterrel gyűjtsd ki a páros jegyeket, majd számíts átlagot a megmaradt értékekből."],
+      ["Készíts saját geometria.py modult kör- és téglatest-számító függvényekkel.", "Importáld a math és random modulokat; generálj jegyet, majd számítsd ki egy szög szinuszát."],
+      ["Fokban bekért szögből számíts radiánértéket, szinuszt és koszinuszt.", "Ellenőrizd, hogy a bolt 8 és 18 óra között nyitva van-e, és válts át egy polárkoordinátát derékszögű koordinátára.", "Kérj be egy angol kisbetűt, és írd ki az ábécé következő betűjét; a z után az a következzen.", "Generálj véletlen jegyet, majd egy hatkarakteres, nagybetűkből és számjegyekből álló kódot."],
+      ["Kérj be jegyet 1 és 5 között; nem szám vagy tartományon kívüli érték esetén kérdezz újra.", "Kérj be két számot, és kezeld külön a nullával való osztást."],
+      ["Egy hibás minimumkereső programban breakpointtal keresd meg, hol marad rossz a legkisebb érték.", "Teszteld az átlagoló függvényt üres listával és egyelemű listával; olvasd el és javítsd a kapott hibát."],
+      ["Készíts Rectangle osztályt kerület- és területszámítással, majd egy Shape alaposztályból örökölt változatot.", "Készíts Student objektumot névvel és azonosítóval, majd __str__ metódussal jelenítsd meg az adatait.", "Készíts Vector osztályt összeadással és indexeléssel."],
+      ["Tárold egy heti többnapos hőmérsékletméréseit kétdimenziós NumPy-tömbben; számíts napi átlagot és maximumot.", "Válassz résztömböt, rendezd egy sor adatait, majd próbálj összeadni kompatibilis és inkompatibilis alakú tömböket."],
+      ["Olvass be CSV-t, szűrd ki a kiválasztott csapat sorait, és jelenítsd meg az első néhány rekordot.", "groupby segítségével összegezd a hazai és idegenbeli gólokat csapatonként, rendezd az eredményt, és ellenőrizd a hiányzó adatokat."],
+      ["Készíts fájlba mentett teendőlistát: hozzáadás, törlés, felsorolás és keresés.", "Készíts kvízt véletlen kérdéssorrenddel és pontozással, majd mentsd el az eredményt.", "Tervezd meg egy CSV-adatelemző vagy vektorosztály részfeladatait, és minden részhez írj tesztet."]
+    ];
+
+    const capstone = {
+      lesson: lessons.pop(),
+      practice: practiceSets.pop(),
+      detail: window.lessonDetails.pop(),
+      reading: window.readingGuides.pop()
+    };
+    for (const module of window.advancedCourse) {
+      lessons.push(module.lesson);
+      practiceSets.push(module.practice);
+      window.lessonDetails.push(module.detail);
+      window.readingGuides.push(module.reading);
+    }
+    lessons.push(capstone.lesson);
+    practiceSets.push(capstone.practice);
+    window.lessonDetails.push(capstone.detail);
+    window.readingGuides.push(capstone.reading);
+
+    const courseOrder = [1, 0, 2, 4, 5, 6, 3, 11, 7, 22, 8, 13, 10, 12, 24, 14, 15, 16, 9, 23, 17, 18, 26, 27, 19, 25, 28, 29, 20, 21, 30];
+    function reorderCourse(items) {
+      const ordered = courseOrder.map(index => items[index]);
+      items.splice(0, items.length, ...ordered);
+    }
+    reorderCourse(lessons);
+    reorderCourse(practiceSets);
+    reorderCourse(window.lessonDetails);
+    reorderCourse(window.readingGuides);
+
+    const groups = ["Mind", "Alapok", "Logika", "Adatok", "Függvények", "Könyvtárak", "Hibakeresés", "Haladó", "Adatmunka", "Algoritmusok", "Automatizálás", "Tesztelés", "Kódminőség", "Projektek"];
+    const storageKey = "python-tanulomuhely-v1";
+    let saved = loadState();
+    if (saved.courseVersion !== 4) {
+      const previousVersion = saved.courseVersion || 1;
+      const remapLegacyIndex = index => {
+        if (previousVersion >= 3) return index;
+        const oldOrderIndex = previousVersion === 2 ? index : index === 22 ? 30 : index;
+        const newIndex = courseOrder.indexOf(oldOrderIndex);
+        return newIndex === -1 ? index : newIndex;
+      };
+      saved.done = (saved.done || []).map(remapLegacyIndex);
+      const oldQuizDone = (saved.quizDone || []).map(remapLegacyIndex);
+      saved.quizResponses = Object.fromEntries(Object.entries(saved.quizResponses || {}).map(([index, responses]) => [String(remapLegacyIndex(Number(index))), responses]));
+      for (const index of oldQuizDone) {
+        const responses = saved.quizResponses[index] || Array(5).fill(null);
+        responses[0] = lessons[index].correct;
+        saved.quizResponses[index] = responses;
+      }
+      saved.quizDone = [];
+      saved.notes = Object.fromEntries(Object.entries(saved.notes || {}).map(([index, note]) => {
+        const numericIndex = Number(index);
+        return Number.isInteger(numericIndex) ? [String(remapLegacyIndex(numericIndex)), note] : [index, note];
+      }));
+      if (Number.isInteger(saved.selected)) saved.selected = remapLegacyIndex(saved.selected);
+      saved.courseVersion = 4;
+      localStorage.setItem(storageKey, JSON.stringify(saved));
+    }
+    let selectedId = Number.isInteger(saved.selected) && saved.selected >= 0 && saved.selected < lessons.length ? saved.selected : 0;
+    let activeGroup = "Mind";
+    let searchTerm = "";
+    let quizIndex = 0;
+    let pyodidePromise = null;
+    let toastTimer;
+
+    function loadState() {
+      try { return JSON.parse(localStorage.getItem(storageKey)) || { done: [], notes: {} }; }
+      catch { return { done: [], notes: {} }; }
+    }
+    function saveState() {
+      saved.selected = selectedId;
+      localStorage.setItem(storageKey, JSON.stringify(saved));
+      updateProgress();
+    }
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+    }
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 1900);
+    }
+    function renderFilters() {
+      document.getElementById("filters").innerHTML = groups.map(group => `<button type="button" class="filter" data-group="${escapeHtml(group)}" aria-pressed="${activeGroup === group}">${escapeHtml(group)}</button>`).join("");
+    }
+    function renderNav() {
+      const matches = lessons.map((lesson, index) => ({ lesson, index })).filter(({ lesson, index }) => {
+        const searchable = `${lesson.title} ${lesson.track} ${lesson.summary} ${lesson.focus.join(" ")} ${window.lessonDetails[index].core.join(" ")} ${window.lessonDetails[index].challenge} ${window.readingGuides[index].join(" ")}`;
+        const found = searchable.toLocaleLowerCase("hu").includes(searchTerm.toLocaleLowerCase("hu"));
+        return found && (activeGroup === "Mind" || lesson.track === activeGroup);
+      });
+      const nav = document.getElementById("lessonNav");
+      nav.innerHTML = matches.length ? matches.map(({ lesson, index }) => `<button type="button" class="lesson-link" data-lesson="${index}" aria-current="${selectedId === index ? "page" : "false"}"><span class="lesson-number">${String(index + 1).padStart(2, "0")}</span><span>${escapeHtml(lesson.title)}</span><span class="done-mark">${saved.done.includes(index) ? "✓" : ""}</span></button>`).join("") : `<p class="empty-state">Nincs ilyen lecke.</p>`;
+    }
+    function renderLesson() {
+      const lesson = lessons[selectedId];
+      quizIndex = 0;
+      document.getElementById("lessonContent").innerHTML = `
+        <div class="lesson-head">
+          <div class="lesson-meta"><span class="lesson-index">${String(selectedId + 1).padStart(2, "0")} / ${String(lessons.length).padStart(2, "0")}</span><span class="tag">${escapeHtml(lesson.track)}</span><span class="tag time">${escapeHtml(lesson.time)}</span></div>
+          <h1>${escapeHtml(lesson.title)}</h1>
+          <p class="intro">${escapeHtml(lesson.summary)}</p>
+          <div class="learning-steps">${lesson.focus.map((item, index) => `<span class="step-chip">${escapeHtml(item)}</span>`).join("")}</div>
+        </div>
+        <div class="section-label"><span>A lecke három kapaszkodója</span><span>01 — 03</span></div>
+        <div class="concept-strip">${lesson.focus.map((item, index) => `<div class="concept"><b>${escapeHtml(item)}</b><span>${escapeHtml(conceptText(lesson, index))}</span></div>`).join("")}</div>
+        <section class="deep-dive" aria-label="Részletes leckemagyarázat">
+          <div class="section-label"><span>Mélyebb megértés</span><span>Olvasd · kövesd · próbáld</span></div>
+          <div class="detail-grid">
+            <div class="detail-block"><h2>Mit érdemes megérteni?</h2><ul>${window.lessonDetails[selectedId].core.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>
+            <div class="detail-block"><h2>A példakód gondolatmenete</h2><ol>${window.lessonDetails[selectedId].walkthrough.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ol></div>
+          </div>
+          <div class="challenge-strip"><strong>Továbbvivő kihívás</strong><p>${escapeHtml(window.lessonDetails[selectedId].challenge)}</p></div>
+          <details class="reading-guide">
+            <summary>Kiegészítő olvasmányok a megadott tárból (${window.readingGuides[selectedId].length})</summary>
+            <ul>${window.readingGuides[selectedId].map(book => `<li>${escapeHtml(book)}</li>`).join("")}</ul>
+            <p>${escapeHtml(window.readingMethod)}</p>
+          </details>
+        </section>
+        <div class="section-label"><span>Próbáld ki a példát</span><span>Python</span></div>
+        <section class="code-panel" aria-label="Python példakód">
+          <div class="code-toolbar"><strong>main.py</strong><div class="code-actions"><button type="button" class="quiet-button" id="resetCode">Példa visszaállítása</button><button type="button" class="quiet-button" id="copyCode">Kód másolása</button><button type="button" class="run-button" id="runCode">Futtatás</button></div></div>
+          <textarea class="code-input" id="codeInput" spellcheck="false" aria-label="Python kódszerkesztő">${escapeHtml(lesson.example)}</textarea>
+          <pre class="output-panel" id="codeOutput" aria-live="polite"></pre>
+        </section>
+        <p class="runner-note">A böngészős Python-futtató első használatkor internetkapcsolatot igényel. A lecke, a kvíz és a jegyzet offline is működik.</p>
+        <section class="task-panel">
+          <h2>Most te jössz</h2><p>${escapeHtml(lesson.task)}</p>
+          <h3 class="task-list-title">Feladatsor az órai mintára</h3>
+          <ol class="task-list">${practiceSets[selectedId].map(task => `<li>${escapeHtml(task)}</li>`).join("")}</ol>
+          <button type="button" class="task-hint" id="hintToggle" aria-expanded="false">Kérek egy apró segítséget</button>
+          <p class="hint-text" id="hintText">${escapeHtml(lesson.hint)}</p>
+          <label class="notes-label" for="notes">Saját megoldás / jegyzet</label>
+          <textarea class="notes" id="notes" placeholder="Írd le a gondolatmeneted vagy a megoldásodat...">${escapeHtml(saved.notes[selectedId] || "")}</textarea>
+          <div class="save-state" id="saveState">A jegyzeted automatikusan mentődik erre az eszközre.</div>
+        </section>`;
+      renderPractice();
+      renderNav();
+      saveState();
+      document.getElementById("lessonContent").scrollIntoView({ block: "start", behavior: "smooth" });
+    }
+    function conceptText(lesson, index) {
+      const explanations = {
+        "Alapok": ["A kód megmondja a gépnek, milyen lépéseket végezzen.", "Kis próbákkal gyorsan kiderül, mit csinál a program.", "Építs egyszerű, jól ellenőrizhető megoldást."],
+        "Adatok": ["Tudd, milyen értéket és szerkezetet választasz.", "Minden elemnek megvan a helye és szerepe.", "Válassz a feladatnak megfelelő bejárást."],
+        "Logika": ["A feltétel választja ki a következő lépést.", "Az ismétlés kíméli a gépelést és rendszerezi a feladatot.", "Tartsd a kódot olvasható, kis lépésekben."],
+        "Függvények": ["Adj egy feladatnak nevet és tiszta határt.", "Az adat paraméterben érkezik, az eredmény visszatér.", "A kódot több programrészben is felhasználhatod."],
+        "Könyvtárak": ["Használd a Pythonban már elérhető eszközöket.", "Olvasd el, mit ad vissza egy függvény.", "Figyelj az adatok és műveletek biztonságára."],
+        "Hibakeresés": ["Olvasd el pontosan a hibaüzenetet.", "Kis lépésekben vizsgáld meg a változókat.", "A hibát javítás után is teszteld."],
+        "Haladó": ["Az objektum együtt tartja az adatot és viselkedést.", "A speciális metódusok a Python műveleteit bővítik.", "Kisebb osztályokból építs nagyobb rendszert."],
+        "Adatmunka": ["Gondolkodj a tömb vagy tábla alakjában.", "Válassz és alakíts adatokat kifejező műveletekkel.", "Ellenőrizd a hiányzó és szélső értékeket."],
+        "Algoritmusok": ["Bontsd a megoldást pontos lépésekre.", "Válassz az adatokhoz illő keresési módszert.", "Hasonlítsd össze a növekedési sebességet."],
+        "Automatizálás": ["A kézi ismétlést váltsd ki biztonságos programmal.", "Ellenőrizd a bejövő fájl vagy webes adat alakját.", "Őrizd meg az eredetit, amíg nem ellenőrizted a kimenetet."],
+        "Tesztelés": ["Rögzítsd teszttel az elvárt viselkedést.", "Kezdd normál, szélső és hibás esettel.", "Csak zöld tesztek mellett refaktorálj."],
+        "Kódminőség": ["A név mutassa a szerepet.", "A függvény legyen egyértelmű felelősségű.", "A típusjelölés és teszt tegye ellenőrizhetővé a szándékot."],
+        "Projektek": ["Előbb bontsd fel a célt megoldható lépésekre.", "Kis, működő változatból fejlessz tovább.", "Ellenőrizd az eredményt tesztekkel."]
+      };
+      const texts = explanations[lesson.track] || explanations["Alapok"];
+      return texts[index] || texts[0];
+    }
+    function getQuizQuestions(lessonIndex) {
+      const lesson = lessons[lessonIndex];
+      const additionalQuestions = (window.quizBanks[lesson.title] || []).map(item => ({ question: item.q, answers: item.a, correct: item.c, why: item.why }));
+      return [{ question: lesson.question, answers: lesson.answers, correct: lesson.correct, why: lesson.why }, ...additionalQuestions];
+    }
+    function renderQuizQuestion() {
+      const questions = getQuizQuestions(selectedId);
+      const question = questions[quizIndex];
+      const responses = saved.quizResponses?.[selectedId] || Array(questions.length).fill(null);
+      const selected = responses[quizIndex];
+      const answered = responses.filter(Number.isInteger).length;
+      const score = responses.reduce((total, response, index) => total + (response === questions[index].correct ? 1 : 0), 0);
+      const feedback = document.getElementById("quizFeedback");
+      document.getElementById("quizPosition").textContent = `Kérdés ${quizIndex + 1} / ${questions.length}`;
+      document.getElementById("quizScore").textContent = `${score} / ${questions.length} helyes · ${answered} megválaszolva`;
+      document.getElementById("quizProgress").style.width = `${answered / questions.length * 100}%`;
+      document.getElementById("quizQuestion").textContent = question.question;
+      document.getElementById("quizAnswers").innerHTML = question.answers.map((answer, index) => {
+        const hasAnswered = Number.isInteger(selected);
+        const classes = ["answer", hasAnswered && index === question.correct ? "correct" : "", hasAnswered && index === selected && selected !== question.correct ? "incorrect" : ""].filter(Boolean).join(" ");
+        return `<button type="button" class="${classes}" data-answer="${index}" aria-pressed="${index === selected}">${escapeHtml(answer)}</button>`;
+      }).join("");
+      if (Number.isInteger(selected)) {
+        const isCorrect = selected === question.correct;
+        const completeText = answered === questions.length ? `A teljes kvíz eredménye: ${score} / ${questions.length}. ` : "";
+        feedback.textContent = `${completeText}${isCorrect ? "Helyes." : "Nem egészen."} ${question.why}`;
+        feedback.className = `quiz-feedback ${isCorrect ? "good" : "bad"}`;
+      } else {
+        feedback.textContent = "Válassz egy választ, és nézd meg az indoklást.";
+        feedback.className = "quiz-feedback";
+      }
+      document.getElementById("quizPrev").disabled = quizIndex === 0;
+      document.getElementById("quizNext").textContent = quizIndex === questions.length - 1 ? "Újra az elejére" : "Következő";
+    }
+    function renderPractice() {
+      const lesson = lessons[selectedId];
+      document.getElementById("practiceContent").innerHTML = `
+        <section class="quiz-panel">
+          <p class="quiz-kicker">Gyors önellenőrzés</p>
+          <div class="quiz-meta"><span class="quiz-position" id="quizPosition"></span><span class="quiz-score" id="quizScore"></span></div>
+          <div class="quiz-progress" aria-hidden="true"><div class="quiz-progress-fill" id="quizProgress"></div></div>
+          <h2 id="quizQuestion"></h2>
+          <div class="answers" id="quizAnswers"></div>
+          <p class="quiz-feedback" id="quizFeedback" aria-live="polite"></p>
+          <div class="quiz-controls"><button type="button" id="quizPrev">Előző</button><span></span><button type="button" id="quizNext">Következő</button></div>
+        </section>
+        <section class="project-panel"><p class="quiz-kicker">Tanulási ritmus</p><h2>Kis lépés, saját tempó</h2><p>Olvasd el a példát, futtasd le, aztán alakíts rajta. A lecke akkor kész, ha a feladatot saját szavaiddal meg tudod oldani.</p></section>
+        <button type="button" class="complete-button ${saved.done.includes(selectedId) ? "is-done" : ""}" id="completeLesson"><span>${saved.done.includes(selectedId) ? "Lecke teljesítve" : "Késznek jelölöm"}</span><span aria-hidden="true">${saved.done.includes(selectedId) ? "✓" : "→"}</span></button>
+        <button type="button" class="next-button" id="nextLesson">Következő lecke <span aria-hidden="true">→</span></button>`;
+      renderQuizQuestion();
+    }
+    function updateProgress() {
+      const count = saved.done.length;
+      const percent = Math.round(count / lessons.length * 100);
+      document.getElementById("progressFill").style.width = `${percent}%`;
+      document.getElementById("progressText").textContent = `${percent}%`;
+      document.getElementById("sideProgress").textContent = `${count} / ${lessons.length} lecke`;
+    }
+    function selectLesson(index) {
+      selectedId = index;
+      renderLesson();
+      closeMenu();
+    }
+    function closeMenu() {
+      document.getElementById("sidebar").classList.remove("open");
+      document.getElementById("scrim").classList.remove("visible");
+      document.getElementById("menuButton").setAttribute("aria-expanded", "false");
+    }
+    async function runPython() {
+      const button = document.getElementById("runCode");
+      const output = document.getElementById("codeOutput");
+      const source = document.getElementById("codeInput").value;
+      button.disabled = true;
+      button.textContent = "Indítás...";
+      output.textContent = "Python-környezet betöltése...";
+      try {
+        if (!pyodidePromise) {
+          pyodidePromise = (async () => {
+            const { loadPyodide } = await import("https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.mjs");
+            return loadPyodide({ stdin: () => window.prompt("A Python-program adatot kér:") ?? "" });
+          })();
+        }
+        const pyodide = await pyodidePromise;
+        if (source.includes("import numpy") || source.includes("from numpy")) await pyodide.loadPackage("numpy");
+        if (source.includes("import pandas") || source.includes("from pandas")) await pyodide.loadPackage("pandas");
+        let printed = "";
+        pyodide.setStdout({ batched: text => { printed += text + "\n"; } });
+        pyodide.setStderr({ batched: text => { printed += text + "\n"; } });
+        const result = await pyodide.runPythonAsync(source);
+        const rendered = result === undefined || result === null ? "" : String(result);
+        output.textContent = printed + (rendered ? (printed ? "" : "") + rendered : "") || "A program hiba nélkül lefutott, nem írt ki eredményt.";
+      } catch (error) {
+        if (String(error).includes("Failed to fetch") || String(error).includes("NetworkError") || String(error).includes("Importing a module script failed")) {
+          output.textContent = "A Python-futtató letöltéséhez internetkapcsolat szükséges. A többi tanulási funkció offline is használható.";
+          pyodidePromise = null;
+        } else {
+          output.textContent = String(error);
+        }
+      } finally {
+        button.disabled = false;
+        button.textContent = "Futtatás";
+      }
+    }
+
+    document.getElementById("filters").addEventListener("click", event => {
+      const button = event.target.closest("[data-group]");
+      if (!button) return;
+      activeGroup = button.dataset.group;
+      renderFilters();
+      renderNav();
+    });
+    document.getElementById("lessonNav").addEventListener("click", event => {
+      const button = event.target.closest("[data-lesson]");
+      if (button) selectLesson(Number(button.dataset.lesson));
+    });
+    document.getElementById("search").addEventListener("input", event => { searchTerm = event.target.value.trim(); renderNav(); });
+    document.getElementById("practiceContent").addEventListener("click", event => {
+      const answer = event.target.closest("[data-answer]");
+      if (answer) {
+        const questions = getQuizQuestions(selectedId);
+        const responses = [...(saved.quizResponses?.[selectedId] || Array(questions.length).fill(null))];
+        responses[quizIndex] = Number(answer.dataset.answer);
+        saved.quizResponses = { ...(saved.quizResponses || {}), [selectedId]: responses };
+        const passed = responses.every((response, index) => response === questions[index].correct);
+        saved.quizDone = (saved.quizDone || []).filter(index => index !== selectedId);
+        if (passed) saved.quizDone.push(selectedId);
+        saveState();
+        renderQuizQuestion();
+      }
+      if (event.target.closest("#quizPrev")) {
+        quizIndex = Math.max(0, quizIndex - 1);
+        renderQuizQuestion();
+      }
+      if (event.target.closest("#quizNext")) {
+        quizIndex = (quizIndex + 1) % getQuizQuestions(selectedId).length;
+        renderQuizQuestion();
+      }
+      if (event.target.closest("#completeLesson")) {
+        if (saved.done.includes(selectedId)) saved.done = saved.done.filter(id => id !== selectedId);
+        else saved.done = [...saved.done, selectedId];
+        saveState();
+        renderNav();
+        renderPractice();
+        showToast(saved.done.includes(selectedId) ? "Lecke elmentve késznek." : "Lecke visszakerült a tanulási listába.");
+      }
+      if (event.target.closest("#nextLesson")) selectLesson((selectedId + 1) % lessons.length);
+    });
+    document.getElementById("lessonContent").addEventListener("click", async event => {
+      if (event.target.closest("#hintToggle")) {
+        const hint = document.getElementById("hintText");
+        const toggle = document.getElementById("hintToggle");
+        const visible = hint.classList.toggle("visible");
+        toggle.setAttribute("aria-expanded", String(visible));
+        toggle.textContent = visible ? "Segítség elrejtése" : "Kérek egy apró segítséget";
+      }
+      if (event.target.closest("#resetCode")) {
+        document.getElementById("codeInput").value = lessons[selectedId].example;
+        document.getElementById("codeOutput").textContent = "";
+      }
+      if (event.target.closest("#copyCode")) {
+        try { await navigator.clipboard.writeText(document.getElementById("codeInput").value); showToast("Kód a vágólapra másolva."); }
+        catch { showToast("A vágólap-hozzáférés nem elérhető ebben a nézetben."); }
+      }
+      if (event.target.closest("#runCode")) runPython();
+    });
+    document.getElementById("lessonContent").addEventListener("input", event => {
+      if (event.target.id !== "notes") return;
+      saved.notes[selectedId] = event.target.value;
+      localStorage.setItem(storageKey, JSON.stringify(saved));
+      document.getElementById("saveState").textContent = "Mentve ezen az eszközön.";
+    });
+    document.getElementById("resetProgress").addEventListener("click", () => {
+      if (!window.confirm("Törlöd az összes mentett leckét és jegyzetet?")) return;
+      saved = { done: [], notes: {}, quizDone: [], quizResponses: {}, courseVersion: 4 };
+      saveState();
+      renderLesson();
+      showToast("A mentett haladás törölve.");
+    });
+    document.getElementById("menuButton").addEventListener("click", () => {
+      const sidebar = document.getElementById("sidebar");
+      const open = sidebar.classList.toggle("open");
+      document.getElementById("scrim").classList.toggle("visible", open);
+      document.getElementById("menuButton").setAttribute("aria-expanded", String(open));
+    });
+    document.getElementById("scrim").addEventListener("click", closeMenu);
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") closeMenu();
+      if (event.key === "/" && !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) {
+        event.preventDefault();
+        document.getElementById("search").focus();
+      }
+    });
+
+    renderFilters();
+    renderNav();
+    renderLesson();
+    updateProgress();
+  </script>
+</body>
+</html>
